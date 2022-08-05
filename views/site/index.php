@@ -6,13 +6,13 @@ $this->title = 'My Yii Application';
 ?>
 
 <div class="alert alert-success">
-  <strong>Success!</strong> modificando resultados.
+  <strong>Success!</strong> modificdddando resultados.
 </div>
 
 <div class="site-index">
 
     <div class="jumbotron text-center bg-transparent">
-        <h1 class="display-4">Congratulations!</h1>
+        <h1 class="display-4">Hola como esta!</h1>
 
         <p class="lead">You have successfully created your Yii-powered application.</p>
 
