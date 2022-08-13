@@ -1,17 +1,18 @@
 
 <?php
-use yii\helpers\Html;
-use yii\widgets\ActiveForm;
-
+use yii\bootstrap4\Html;
+use yii\bootstrap4\ActiveForm;
+use yii\helpers\Url;
 ?>
 <h1>Agregar Cliente a Peliculas</h1>
 
 <h3>
 
-
+<a name="" id="" class="btn alert-danger btn-primary" href="<?= Url::toRoute("site/viewcliente"); ?>" role="button">Ver clientes</a>
 
     <?php
         if($mensaje != null){
+            
             echo '
             <div class="alert alert-success alert-dismissible fade show" role="alert">
             <button type="button" class="close" data-dismiss="alert" aria-label="Close">
@@ -27,12 +28,14 @@ use yii\widgets\ActiveForm;
 <?php 
     $form = ActiveForm::begin([
         "method" => "post",
-        "enableClientValidation" => true
+        "id" => "frmajax",
+        "enableClientValidation" => false,
+        "enableAjaxValidation" => true,
     ]);
 ?>
 
 <div class="form-group">
-  <?= $form->field($model,"id_c")->textInput(['class'=>'form-control',"aria-describedby"=>"helpId",'required'])->hint('Identificación')->label('ID del cliente'); ?>
+  <?= $form->field($model,"id_c",['inputOptions' => ['required'=>true]])->textInput(['class'=>'form-control',"aria-describedby"=>"helpId",'autofocus' => true])->hint('Identificación')->label('ID del cliente'); ?>
  
 </div>
 

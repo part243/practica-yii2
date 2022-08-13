@@ -16,28 +16,200 @@ use yii\web\Response; // importante para trabajar con ajax
 // incluir modelos apra interactuar con la bdd
 use app\models\CrearCliente;
 use app\models\Clientes;
+use yii\data\Pagination;
+use yii\data\pageSize;
+use yii\data\page;
+use app\models\FormClienteSearch;
+use yii\helpers\Html;
+use yii\helpers\Url;
+use app\models\UpdateCliente;
 
 class SiteController extends Controller
 {
+    /**
+     * Actualizar un registro
+     */
+    public function actionUpdatecliente(){
+        $model = new UpdateCliente;
+        $msg= null;
+
+        // alidaión ajax
+        if($model->load(Yii::$app->request->post()) && Yii::$app->request->isAjax){
+            Yii::$app->response->format = Response::FORMAT_JSON; // respuesta pasar a formato JSON
+            return ActiveForm::validate($model); // enviamos a validar el formulario
+            \Yii::$app->end();
+        }
+        // capturamos datos del formluario y validamos para guardar
+        if($model->load(Yii::$app->request->post())){
+            if($model->validate()){
+                $table = Clientes::findOne($model->id_c);
+                if($table){
+                    $table->nombre_c = $model->nombre_c;
+                    $table->apellido_c = $model->apellido_c;
+                    if($table->save()){
+                        $msg= 'Cliente actualizado';
+                    }else{
+                        $msg = 'Cliente no actualizado';
+                    }
+                }else{
+                    $msg = "El cliente no ha sido encontrado";
+                }
+            }else{
+                $model->getErrors();
+            }
+        }
+        //obtenemos datos de la bdd y mostramos en el formulario
+        if(Yii::$app->request->get("id_c")){
+            $id_c = Html::encode($_GET['id_c']);
+            if((int) $id_c){
+                $table = Clientes::findOne($id_c);
+                if($table){
+                    $model->id_c = $table->id_c;
+                    $model->apellido_c = $table->apellido_c;
+                    $model->nombre_c = $table->nombre_c;
+                }else{
+                    return $this->redirect(["site/viewcliente"]);
+                }
+            }else{
+                return $this->redirect(['site/viewcliente']);
+            }
+        }else{
+            return $this->redirect(['site/viewcliente']);
+        }
+        if($msg != null){
+            $msg = '<div class="alert alert-success alert-dismissible fade show" role="alert">
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+            <strong>'.$msg.'</strong> 
+          </div>';
+        }
+        return $this->render('updatecliente',["model"=>$model,"msg"=>$msg]);
+    }
+
+    /** 
+     * 
+     * Eliminar Cliente
+     */
+    public function actionDeletecliente(){
+        if(Yii::$app->request->post()){
+            $idcliente = Html::encode($_POST["id_c"]);
+            if((int) $idcliente){
+                if(Clientes::deleteAll("id_c=:id_C",[":id_C"=> $idcliente])){
+                    echo "Cliente eliminado exitosamente, redireccionando...";
+                    echo "<meta http-equiv='refresh' content='3;".Url::toRoute("site/viewcliente");
+                }else{
+                    echo "Ha ocurrido un error al eliminar el cliente, redireccionando...";
+                    echo "<meta http-equiv='refresh' content='3;".Url::toRoute("site/viewcliente");
+                }
+            }else{
+                echo "Ha ocurrido un error al eliminar el cliente, redireccionando...";
+                echo "<meta http-equiv='refresh' content='3;".Url::toRoute("site/viewcliente");
+            }
+        }
+        
+        return $this->redirect(["site/viewcliente"]);
+    }
+    /**
+     * 
+     * Muestra todos los clientes
+     */
+    public function actionViewcliente(){
+        $mensaje = null;
+        $form = new FormClienteSearch;
+        $search = null;      
+        
+        if($form->load(Yii::$app->request->get())){
+            if($form->validate()){
+                $search = Html::encode($form->q); //validar inyeccion sql
+                $table = Clientes::find()
+                                    ->where(['like', "id_c",$search])
+                                    ->orWhere(['like', "nombre_c",$search])
+                                    ->orWhere(['like',"apellido_c",$search]);
+                
+               // $query = "select * from clientes where id_c like '%$search%' or ";
+               // $query.= "apellido_c LIKE '%$search%' or ";
+               // $query.= "nombre_c LIKE '%$search%';";
+               $count = clone $table;
+               $pages = new Pagination(["pageSize"=>3,"totalCount" =>$count->count()]);
+               //$model = $table->findBySql($query)->all();
+               $model = $table->offset($pages->offset)->limit($pages->limit)->all();
+            }else{
+                $form->getErrors();
+            }
+        }else{
+            $table=Clientes::find();
+            $count = clone $table;
+            $pages = new Pagination(["pageSize"=>3,"totalCount" =>$count->count()]);
+            $model = $table->offset($pages->offset)->limit($pages->limit)->all();
+        }
+       
+      
+        return $this->render('viewcliente',['mensaje' => $mensaje,'model'=>$model,"form"=>$form,"search"=>$search,"pages"=>$pages]);
+    }
+
+    /**
+     * Muestra todos los clientes
+     */
+    public function actionViewcliente1(){
+        $mensaje = null;
+        //$table = new Clientes;
+        $sql = "select * from clientes";
+       // $query = Clientes::findBySql($sql);
+       // $countTotals = clone $query;
+       // $pagination = new Pagination(['PageSize'=>3,'totalCount' => $countTotals->count()]);
+       // $model = $query->offset($pagination->offset)->limit($pagination->limit)->all();
+       $query = Clientes::find()->orderBy(['apellido_c' => SORT_ASC]);
+
+       // get the total number of articles (but do not fetch the article data yet)
+       
+       
+       // create a pagination object with the total count
+       $pagination = new Pagination(['totalCount' => $query->count(),
+                'pageSize' => 5,
+                'pageParam' => 'p',
+                'pageSizeParam' => 'pageSize'
+                ]);
+       
+       // limit the query using the pagination and retrieve the articles
+       $model = $query->offset($pagination->offset)
+           ->limit($pagination->limit)
+           ->all();
+        return $this->render('viewcliente',['mensaje' => $mensaje,'model'=>$model,'pages'=>$pagination]);
+    }
+
     //accion para crear en peliculas
     public function actionCrearcliente(){
         $mensaje = null;
         $model = new CrearCliente;
+
+        if($model->load(Yii::$app->request->post()) && Yii::$app->request->isAjax){
+            Yii::$app->response->format = Response::FORMAT_JSON; // respuesta pasar a formato JSON
+            return ActiveForm::validate($model); // enviamos a validar el formulario
+            \Yii::$app->end();
+        }
+
         if($model->load(Yii::$app->request->post())){
-            // conectar al modelo
-            $table = new Clientes;
-            $table->id_c = $model->id_c;
-            $table->nombre = $model->nombre;
-            $table->apellido = $model->apellido;
-            if($table->insert()){
-                $mensaje = "Registro agregado correctamente";
-                $model->id_c = null;
-                $model->nombre_c = null;
-                $model->apellido_c = null;
+            if( $model->validate()){
+                    // conectar al modelo
+                    $table = new Clientes;
+                    $table->id_c = $model->id_c;
+                    $table->nombre_c = $model->nombre_c;
+                    $table->apellido_c = $model->apellido_c;
+                    if($table->insert()){
+                        $mensaje = "Registro agregado correctamente";
+                        $model->id_c = null;
+                        $model->nombre_c = null;
+                        $model->apellido_c = null;
+                    }else{
+                        $mensaje = "Error al insertar registro";
+                        $model->getErrors();
+                    }
             }else{
-                $mensaje = "Error al insertar registro";
+                $message = "formulario NO válido";
                 $model->getErrors();
             }
+           
         }else{
             
             $model->getErrors();
