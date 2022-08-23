@@ -17,7 +17,7 @@ $this->params['breadcrumbs'][] = $this->title;
     <?php if (Yii::$app->session->hasFlash('contactFormSubmitted')): ?>
 
         <div class="alert alert-success">
-            Thank you for contacting us. We will respond to you as soon as possible.
+            Gracias por su mensaje, en lo posible nos contactaremos con usted
         </div>
 
         <p>
@@ -42,7 +42,7 @@ $this->params['breadcrumbs'][] = $this->title;
             <div class="col-lg-5">
 
                 <?php $form = ActiveForm::begin(['id' => 'contact-form']); ?>
-
+ 
                     <?= $form->field($model, 'name')->textInput(['autofocus' => true]) ?>
 
                     <?= $form->field($model, 'email') ?>
